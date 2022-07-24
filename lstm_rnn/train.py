@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-from model import RNNpred
+from model import LSTMmodel
 from utils import nl_sys_gen_traj
 from tqdm import tqdm
 
@@ -16,7 +16,7 @@ x1_traj, _, _ = nl_sys_gen_traj('sine', 1, 100, 1)
 
 train_traj_list = list()
 pred_traj_list = list()
-N = 500
+N = 200
 
 # for i in range(1, 8):
 #     x1_traj_i, _, _ = nl_sys_gen_traj('quad', i, N, 0.4)
@@ -49,25 +49,34 @@ num_batch  = len(train_traj_list)
 train_set = torch.FloatTensor(train_traj).view(-1, 1)
 true_set = torch.FloatTensor(pred_traj).view(-1, 1)
 
-model = RNNpred(input_size=1,hidden_dim_1=8, hidden_dim_2=7, hidden_dim_3 = 6,output_size=1)
+model = LSTMmodel(input_size=1,hidden_size_1=8, hidden_size_2=7, hidden_size_3 = 6,out_size=1)
 
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(),lr=0.001)
 
-epochs = 100
+epochs = 2000
 
 for epoch in tqdm(range(epochs)):
 
     # Running each batch separately
 
     for bat_id in range(num_batch):
-        model.init_hidden()
+        # model.hidden_1 = (torch.zeros(1, 1, model.hidden_size_1),
+        #                   torch.zeros(1, 1, model.hidden_size_1))
+        #
+        # model.hidden_2 = (torch.zeros(1, 1, model.hidden_size_2),
+        #                   torch.zeros(1, 1, model.hidden_size_2))
+        #
+        # model.hidden_3 = (torch.zeros(1, 1, model.hidden_size_3),
+        #                   torch.zeros(1, 1, model.hidden_size_3))
+
         for k in range(batch_size):
             # set the optimization gradient to zero
 
             optimizer.zero_grad()
 
             # Make predictions on the current sequence
+            model.init_hidden()
 
             y_pred = model(train_set[bat_id * batch_size + k])
 
@@ -84,5 +93,5 @@ for epoch in tqdm(range(epochs)):
     if epoch % 10 == 0:
         print(f'Epoch: {epoch} Loss: {loss.item():10.8f}')
 
-model_save_name = 'RNN_500.pt'
-torch.save(model.state_dict(), "trained_models/"+model_save_name)
+model_save_name = 'LSTM_2000_lr_1.pt'
+torch.save(model.state_dict(), "../trained_models/"+model_save_name)

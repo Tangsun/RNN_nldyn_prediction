@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from utils import nl_sys_gen_traj
-from model import RNNpred
+from model import LSTMmodel
 
-model_save_name = 'RNN_500.pt'
-model = RNNpred(input_size=1,hidden_dim_1=8, hidden_dim_2=7, hidden_dim_3 = 6,output_size=1)
-model.load_state_dict(torch.load("trained_models/"+model_save_name))
+model_save_name = 'LSTM_2000_lr_1.pt'
+model = LSTMmodel(input_size=1,hidden_size_1=8, hidden_size_2=7, hidden_size_3 = 6,out_size=1)
+model.load_state_dict(torch.load("../trained_models/"+model_save_name))
 # %%
-batch_size = 500
+batch_size = 200
 num_batch = 2
 horizon = batch_size
 
@@ -20,7 +20,7 @@ true_data = list()
 
 train_traj_list = list()
 pred_traj_list = list()
-N = 500
+N = 200
 
 # for i in range(1, 8):
 #     x1_traj_i, _, _ = nl_sys_gen_traj('quad', i, N, 0.4)
@@ -56,10 +56,12 @@ true_set = torch.FloatTensor(pred_traj).view(-1, 1)
 for id in range(num_batch):
     true_data.append(pred_traj_list[id])
     pred_traj = np.zeros((batch_size,))
-    model.init_hidden(batch_size)
+    # model.init_hidden(batch_size)
 
     for k in range(batch_size):
-        pred_traj[k] = model(train_set[id * batch_size + k])
+        with torch.no_grad():
+            model.init_hidden()
+            pred_traj[k] = model(train_set[id * batch_size + k])
 
     pred_model.append(pred_traj)
 
@@ -69,6 +71,6 @@ T_index = ['20', '80']
 for id in range(2):
     ax4[id].plot(range(batch_size), pred_model[id])
     ax4[id].plot(range(batch_size), true_data[id])
-    ax4[id].set_xlim([200, 400])
+    ax4[id].set_xlim([0, 200-1])
     ax4[id].set_title('T=' + T_index[id])
 plt.show()
