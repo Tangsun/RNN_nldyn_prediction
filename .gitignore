@@ -1,4 +1,4 @@
 .idea/
 __pychache__/
 .DS_Store
-*.pdf
+sine_example/*.pdf
