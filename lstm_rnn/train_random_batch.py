@@ -5,6 +5,10 @@ import torch.nn as nn
 from model import LSTMmodel
 from utils import nl_sys_gen_traj
 from tqdm import tqdm
+import random
+from torch.utils.tensorboard import SummaryWriter
+
+writer = SummaryWriter()
 
 x1_traj, _, _ = nl_sys_gen_traj('sine', 1, 100, 1)
 
@@ -54,13 +58,17 @@ model = LSTMmodel(input_size=1,hidden_size_1=8, hidden_size_2=7, hidden_size_3 =
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(),lr=0.005)
 
-epochs = 200
+# epochs = 200
+epochs = 1000
 
+count = 0
 for epoch in tqdm(range(epochs)):
 
     # Running each batch separately
+    batch_seq = random.sample(range(num_batch), num_batch)
 
-    for bat_id in range(num_batch):
+    for bat_id in batch_seq:
+
         # set the optimization gradient to zero
 
         optimizer.zero_grad()
@@ -73,6 +81,8 @@ for epoch in tqdm(range(epochs)):
         # Compute the loss
 
         loss = criterion(y_pred, true_set[bat_id * batch_size: (bat_id+1)*batch_size])
+        writer.add_scalar("Loss/Train", loss, count)
+        count = count+1
 
         # Perform back propogation and gradient descent
 
@@ -83,5 +93,7 @@ for epoch in tqdm(range(epochs)):
     if epoch % 10 == 0:
         print(f'Epoch: {epoch} Loss: {loss.item():10.8f}')
 
-model_save_name = 'final_LSTM_200.pt'
-torch.save(model.state_dict(), "../trained_models/"+model_save_name)
+writer.flush()
+writer.close()
+model_save_name = 'final_LSTM_1000_rd_batch.pt'
+torch.save(model.state_dict(), "trained_models/"+model_save_name)
